@@ -1,11 +1,16 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Welcome</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
-<body>
-    <h2>Welcome!</h2>
-    <p>welcome to Agentic AI.</p>
-    <a href="{% url 'login' %}">Go to Login</a>
+<body class="bg-light">
+    <div class="container">
+        <h2 class="mt-5">Welcome!</h2>
+        <p>Welcome to Agentic AI.</p>
+        <a href="{% url 'login' %}" class="btn btn-primary">Go to Login</a>
+    </div>
 </body>
 </html>
