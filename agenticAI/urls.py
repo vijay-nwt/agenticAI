@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from users.views import signup, welcome, home, login_view, logout_view, record_list, create_record, update_record, delete_record
+from users.views import signup, welcome, home, login_view, logout_view, record_list, create_record, update_record, delete_record, chatbot_api
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -29,4 +29,5 @@ urlpatterns = [
     path('records/create/', create_record, name='create_record'),
     path('records/<int:pk>/update/', update_record, name='update_record'),
     path('records/<int:pk>/delete/', delete_record, name='delete_record'),
+    path('chatbot/', chatbot_api, name='chatbot_api')
 ]

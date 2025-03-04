@@ -49,6 +49,24 @@
             padding: 0 15px;
             border-bottom-right-radius: 10px;
         }
+        .user-message {
+            background: #007bff;
+            color: white;
+            padding: 8px;
+            border-radius: 5px;
+            margin: 5px;
+            align-self: flex-end;
+            max-width: 80%;
+        }
+        .bot-message {
+            background: #f1f1f1;
+            color: #333;
+            padding: 8px;
+            border-radius: 5px;
+            margin: 5px;
+            align-self: flex-start;
+            max-width: 80%;
+        }
     </style>
     <div class="container">
         <h2 class="mt-5">Welcome!</h2>
@@ -72,4 +90,70 @@
             <button>Send</button>
         </div>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatInput = document.querySelector('.chatbot-input input');
+            const chatButton = document.querySelector('.chatbot-input button');
+            const chatMessages = document.querySelector('.chatbot-messages');
+            
+            function addMessage(message, isUser = false) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = isUser ? 'user-message' : 'bot-message';
+                messageDiv.textContent = message;
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+            
+            function sendMessage() {
+                const message = chatInput.value.trim();
+                if (message) {
+                    addMessage(message, true);
+                    chatInput.value = '';
+                    
+                    fetch('/chatbot/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: JSON.stringify({ message: message })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.response) {
+                            addMessage(data.response);
+                            // If the response contains a command, highlight it
+                            if (data.response.includes('Create') || 
+                                data.response.includes('Update') || 
+                                data.response.includes('Delete')) {
+                                const lastMessage = chatMessages.lastChild;
+                                lastMessage.style.backgroundColor = '#28a745';
+                                lastMessage.style.color = 'white';
+                            }
+                        } else if (data.error) {
+                            addMessage('Error: ' + data.error);
+                        }
+                    })
+                    .catch(error => {
+                        addMessage('Error communicating with the server');
+                    });
+                }
+            }
+            
+            chatButton.addEventListener('click', sendMessage);
+            chatInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+            
+            // Add some initial instructions
+            addMessage("Hello! I'm your AI-powered record management assistant.");
+            addMessage("You can say things like:");
+            addMessage("- 'I need to add a new employee named John Doe'");
+            addMessage("- 'Please update record 5 with new information'");
+            addMessage("- 'Delete the record for employee ID 3'");
+            addMessage("How can I assist you today?");
+        });
+    </script>
     {% endblock %}
