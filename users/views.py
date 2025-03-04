@@ -1,8 +1,8 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, login as auth_login, logout as auth_logout
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.decorators import login_required
-from .models import Profile
+from .models import Profile, Record
 
 # Create your views here.
 
@@ -40,3 +40,41 @@ def login_view(request):
 def logout_view(request):
     auth_logout(request)
     return redirect('login')
+
+@login_required
+def record_list(request):
+    records = Record.objects.all()
+    return render(request, 'records.html', {'records': records})
+
+@login_required
+def create_record(request):
+    if request.method == 'POST':
+        # Create record from POST data
+        Record.objects.create(
+            name=request.POST['name'],
+            age=request.POST['age'],
+            address=request.POST['address'],
+            department=request.POST['department']
+        )
+        return redirect('record_list')
+    return render(request, 'record_form.html')
+
+@login_required
+def update_record(request, pk):
+    record = get_object_or_404(Record, pk=pk)
+    if request.method == 'POST':
+        # Update record from POST data
+        record.name = request.POST['name']
+        record.age = request.POST['age']
+        record.address = request.POST['address']
+        record.department = request.POST['department']
+        record.save()
+        return redirect('record_list')
+    return render(request, 'record_form.html', {'record': record})
+
+@login_required
+def delete_record(request, pk):
+    record = get_object_or_404(Record, pk=pk)
+    if request.method == 'POST':
+        record.delete()
+    return redirect('record_list')

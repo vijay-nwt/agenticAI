@@ -1,0 +1,20 @@
+<form method="post">
+    {% csrf_token %}
+    <div>
+        <label>Name:</label>
+        <input type="text" name="name" value="{{ record.name|default:'' }}" required>
+    </div>
+    <div>
+        <label>Age:</label>
+        <input type="number" name="age" value="{{ record.age|default:'' }}" required>
+    </div>
+    <div>
+        <label>Address:</label>
+        <textarea name="address" required>{{ record.address|default:'' }}</textarea>
+    </div>
+    <div>
+        <label>Department:</label>
+        <input type="text" name="department" value="{{ record.department|default:'' }}" required>
+    </div>
+    <button type="submit">Save</button>
+</form> 
