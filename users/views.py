@@ -32,7 +32,11 @@ def login_view(request):
         if form.is_valid():
             user = form.get_user()
             auth_login(request, user)
-            return redirect('home')  # Redirect to home after successful login
+            return redirect('welcome')  # Redirect to home after successful login
     else:
         form = AuthenticationForm()
     return render(request, 'login.html', {'form': form})
+
+def logout_view(request):
+    auth_logout(request)
+    return redirect('login')
