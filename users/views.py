@@ -4,6 +4,11 @@ from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from .models import Profile, Record
 
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
+from .autogen_service import execute_crud
+
 # Create your views here.
 
 def signup(request):
@@ -78,3 +83,19 @@ def delete_record(request, pk):
     if request.method == 'POST':
         record.delete()
     return redirect('record_list')
+
+
+@csrf_exempt
+def ai_crud(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            print("data",data)
+            prompt = data.get("prompt", "")
+            response = execute_crud(prompt)  # Get the response directly
+            return JsonResponse(response)  # Return the response directly
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON format"}, status=400)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+    return JsonResponse({"error": "Invalid request"}, status=400)

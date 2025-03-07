@@ -3,5 +3,9 @@
 {% block content %}
     <h1>Welcome to AgenticAI</h1>
     <p>Welcome to Agentic AI.</p>
-    <a href="{% url 'login' %}" class="btn btn-primary">Go to Login</a>
+    {% if user.is_authenticated %}
+        <a href="{% url 'welcome' %}" class="btn btn-primary">Go to Chatbot</a>
+    {% else %}
+        <a href="{% url 'login' %}" class="btn btn-primary">Go to Login</a>
+    {% endif %}
 {% endblock %}
