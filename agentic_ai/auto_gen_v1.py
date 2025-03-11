@@ -14,6 +14,12 @@ load_dotenv()
 
 API_KEY = os.getenv("OPENAI_API_KEY")
 
+# OpenAI Client
+gpt_model_client = OpenAIChatCompletionClient(
+    model="gpt-4o-mini",
+    api_key=API_KEY
+)
+
 # Update base URL to match your Django API structure
 BASE_API_URL = "http://localhost:8000/account_info/"
 
@@ -159,11 +165,7 @@ get_account_info_tool = FunctionTool(get_account_info, description="Get account 
 update_account_info_tool = FunctionTool(update_account_info, description="Update existing account information")
 delete_account_info_tool = FunctionTool(delete_account_info, description="Delete account information")
 weather_tool = FunctionTool(get_weather_info, description="Get current weather information for a given city")
-# OpenAI Client
-gpt_model_client = OpenAIChatCompletionClient(
-    model="gpt-4o-mini",
-    api_key=API_KEY
-)
+
 
 # Routing Agent - Determines the required module
 RoutingAgent = AssistantAgent(
