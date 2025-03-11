@@ -1,0 +1,7 @@
+# Ignore migration files
+*.migrations/
+# Ignore environment file
+.env
+# Ignore all migration files in the users app
+users/migrations/
+agenticAI/__pycache__/
