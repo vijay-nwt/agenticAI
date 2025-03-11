@@ -21,6 +21,12 @@ class TechsupportAdmin(admin.ModelAdmin):
 
 @admin.register(AccountInfo)
 class AccountInfoAdmin(admin.ModelAdmin):
-    list_display = ('user', 'account_balance', 'plan_details', 'payment_status')
-    list_filter = ('payment_status', 'plan_details')
-    search_fields = ('user__username', 'contact_details')
+    list_display = ("id","username", "account_balance", "contact_details", "last_transactions")
+    search_fields = ("username", "contact_details")
+    readonly_fields = ("last_transactions",)
+
+    def get_fields(self, request, obj=None):
+        fields = super().get_fields(request, obj)
+        if obj:  # Editing an existing object
+            return ['username', 'account_balance', 'contact_details', 'last_transactions']
+        return ['username', 'account_balance', 'contact_details']

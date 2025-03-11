@@ -8,10 +8,14 @@ from autogen_core.tools import FunctionTool
 import asyncio
 from dotenv import load_dotenv
 import os
+import aiohttp
 
 load_dotenv()
 
 API_KEY = os.getenv("OPENAI_API_KEY")
+
+# Update base URL to match your Django API structure
+BASE_API_URL = "http://localhost:8000/account_info/"
 
 # Define external tools/functions that agents can use
 async def get_account_balance(account_id: str) -> str:
@@ -50,12 +54,111 @@ async def check_flight_availability(destination: str, date: str) -> str:
     # Mock implementation
     return f"Found 8 flights to {destination} on {date}. Prices range from $299 to $750."
 
+# Update CRUD functions to match your API endpoints
+async def create_account_info(username: str, account_balance: float, last_transactions: list, contact_details: str) -> str:
+    """Create new account information"""
+    url = f"{BASE_API_URL}create/"
+    payload = {
+        "username": username,
+        "account_balance": account_balance,
+        "last_transactions": last_transactions,
+        "contact_details": contact_details
+    }
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url, json=payload) as response:
+            if response.status == 201:
+                data = await response.json()
+                return f"Account created successfully. ID: {data['id']}"
+            return f"Error creating account: {await response.text()}"
+
+async def get_account_info(account_id: str) -> str:
+    """Get account information by ID"""
+    url = f"{BASE_API_URL}{account_id}/"
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            if response.status == 200:
+                data = await response.json()
+                return f"Account Info:Account Holder: {data['username']}, Balance: {data['account_balance']}, Transactions: {data['last_transactions']}, Contact: {data['contact_details']}"
+            return f"Error fetching account info: {await response.text()}"
+
+async def update_account_info(username: str, account_id: str, account_balance: float, last_transactions: list, contact_details: str) -> str:
+    """Update existing account information"""
+    url = f"{BASE_API_URL}{account_id}/update/"
+    payload = {
+        "username": username,
+        "account_balance": account_balance,
+        "last_transactions": last_transactions,
+        "contact_details": contact_details
+    }
+    async with aiohttp.ClientSession() as session:
+        async with session.put(url, json=payload) as response:
+            if response.status == 200:
+                return "Account updated successfully"
+            return f"Error updating account: {await response.text()}"
+
+async def delete_account_info(account_id: str) -> str:
+    """Delete account information"""
+    url = f"{BASE_API_URL}{account_id}/delete/"
+    async with aiohttp.ClientSession() as session:
+        async with session.delete(url) as response:
+            if response.status == 200:
+                return "Account deleted successfully"
+            return f"Error deleting account: {await response.text()}"
+
+async def handle_transaction(account_id: str, amount: float, transaction_type: str) -> str:
+    """Handle deposit/withdrawal transaction and update balance"""
+    url = f"{BASE_API_URL}{account_id}/transaction/"
+    payload = {
+        "amount": amount,
+        "transaction_type": transaction_type  # "deposit" or "withdrawal"
+    }
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url, json=payload) as response:
+            if response.status == 200:
+                data = await response.json()
+                return f"Transaction successful. New balance: {data['new_balance']}"
+            return f"Error processing transaction: {await response.text()}"
+
+
+# Add this new function with the real API call
+async def get_weather_info(city: str) -> str:
+    """Get current weather information for a given city."""
+    WEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
+    
+    if not WEATHER_API_KEY:
+        return "Error: OpenWeather API key not found. Please check your .env file."
+    
+    base_url = "http://api.openweathermap.org/data/2.5/weather"
+    
+    async with aiohttp.ClientSession() as session:
+        try:
+            params = {
+                'q': city,
+                'appid': WEATHER_API_KEY,
+                'units': 'metric'  # For Celsius
+            }
+            async with session.get(base_url, params=params) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    weather_desc = data['weather'][0]['description']
+                    temp = data['main']['temp']
+                    humidity = data['main']['humidity']
+                    return f"Current weather in {city}: {weather_desc}, Temperature: {temp}°C, Humidity: {humidity}%"
+                else:
+                    return f"Error getting weather data for {city}. Status: {response.status}"
+        except Exception as e:
+            return f"Error making API request: {str(e)}"
+
 # Create function tools
 account_balance_tool = FunctionTool(get_account_balance, description="Get account balance by ID")
 service_status_tool = FunctionTool(check_service_status, description="Check service status")
 product_search_tool = FunctionTool(search_product_catalog, description="Search product catalog")
 flight_tool = FunctionTool(check_flight_availability, description="Check flight availability")
-
+create_account_info_tool = FunctionTool(create_account_info, description="Create new account information")
+get_account_info_tool = FunctionTool(get_account_info, description="Get account information by ID")
+update_account_info_tool = FunctionTool(update_account_info, description="Update existing account information")
+delete_account_info_tool = FunctionTool(delete_account_info, description="Delete account information")
+weather_tool = FunctionTool(get_weather_info, description="Get current weather information for a given city")
 # OpenAI Client
 gpt_model_client = OpenAIChatCompletionClient(
     model="gpt-4o-mini",
@@ -73,7 +176,7 @@ RoutingAgent = AssistantAgent(
      The available agents are:
         - TechSupportAgent: For troubleshooting internet, phone, cable, or software installation.
         - AccountsBillingAgent: For account balances, plan upgrades, and payments.
-        - ConversationalSearchAgent: For FAQs, product availability, and catalog filtering.
+        - ConversationalSearchAgent: For FAQs, product availability, and catalog filtering and weather information.
         - TravelConciergeAgent: For booking flights, hotels, and travel-related queries.
         - FrontDeskAgent: For handling appointments, service inquiries, and call transfers.
      You can engage with agnets multiple times
@@ -103,22 +206,24 @@ AccountsBillingAgent = AssistantAgent(
     model_client=gpt_model_client,
     system_message="""
     You manage account details, billing, plan upgrades, and payments.
-    You have access to tools that can check account balances. Use these tools to provide accurate information.
+    You can handle deposits and withdrawals which will automatically update both the balance and transaction history.
+    Use the handle_transaction tool with transaction_type="deposit" for deposits and transaction_type="withdrawal" for withdrawals.
     """,
-    tools=[account_balance_tool]
+    tools=[create_account_info_tool, get_account_info_tool, update_account_info_tool, 
+           delete_account_info_tool, handle_transaction]
 )
 
-# Conversational Search Agent with tools
 ConversationalSearchAgent = AssistantAgent(
     "ConversationalSearchAgent",
     model_client=gpt_model_client,
     system_message="""
     You search FAQs, knowledge bases, and product availability.
-    You have access to tools that can search the product catalog. Use these tools to provide accurate information.
+    You have access to tools that can search the product catalog. Use these tools to provide accurate information.You provide weather information for cities worldwide.
+    You have access to real-time weather data through the OpenWeather API.
+    Use the weather tool to provide accurate current weather conditions.
     """,
-    tools=[product_search_tool]
+    tools=[product_search_tool,weather_tool]
 )
-
 # Travel Concierge Agent with tools
 TravelConciergeAgent = AssistantAgent(
     "TravelConciergeAgent",
@@ -155,6 +260,7 @@ team = SelectorGroupChat(
     model_client=gpt_model_client,
     termination_condition=termination,
 )
+
 
 # Define the main asynchronous function
 async def main():

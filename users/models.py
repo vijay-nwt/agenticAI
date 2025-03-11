@@ -45,12 +45,15 @@ class Techsupport(models.Model):
         return f"{self.user.username} - {self.support_type}"
     
 class AccountInfo(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    username = models.CharField(max_length=100, null=True, blank=True)
     account_balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    invoices = models.TextField(blank=True)  # Could be a JSON field or a related model for detailed invoices
-    plan_details = models.CharField(max_length=100)  # e.g., plan name or description
-    contact_details = models.TextField(blank=True)  # To store updated contact information
-    payment_status = models.CharField(max_length=20, default='pending')  # e.g., pending, completed
+    last_transactions = models.JSONField(default=list)  # Stores last 3 transactions as amounts
+    contact_details = models.TextField(blank=True)
+
+    def add_transaction(self, amount):
+        """Add a new transaction to the history"""
+        self.last_transactions = [amount] + self.last_transactions[:2]  # Keep only last 3
+        self.save()
 
     def __str__(self):
-        return f"{self.user.username} - Account Info"
+        return f"{self.username} - Account Info"

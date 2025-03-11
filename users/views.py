@@ -8,6 +8,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
 from .autogen_service import execute_crud
+from decimal import Decimal
 
 # Create your views here.
 
@@ -109,3 +110,101 @@ def ai_crud(request):
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
     return JsonResponse({"error": "Invalid request"}, status=400)
+
+@csrf_exempt
+def account_info_detail(request, pk):
+    account = get_object_or_404(AccountInfo, pk=pk)
+    if request.method == 'GET':
+        data = {
+            'username': account.username,
+            'account_balance': str(account.account_balance),
+            'last_transactions': account.last_transactions,
+            'contact_details': account.contact_details
+        }
+        return JsonResponse(data)
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+@csrf_exempt
+def create_account_info(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            # Create account with username instead of user
+            account = AccountInfo.objects.create(
+                username=data.get('username'),
+                account_balance=data.get('account_balance', 0.00),
+                last_transactions=data.get('last_transactions', []),
+                contact_details=data.get('contact_details', '')
+            )
+            return JsonResponse({'id': account.id, 'message': 'Account info created successfully'}, status=201)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+@csrf_exempt
+def update_account_info(request, pk):
+    account = get_object_or_404(AccountInfo, pk=pk)
+    if request.method == 'PUT':
+        try:
+            data = json.loads(request.body)
+            account.username = data.get('username', account.username)
+            account.account_balance = data.get('account_balance', account.account_balance)
+            account.last_transactions = data.get('last_transactions', account.last_transactions)
+            account.contact_details = data.get('contact_details', account.contact_details)
+            account.save()
+            return JsonResponse({'message': 'Account info updated successfully'})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+@csrf_exempt
+def handle_transaction(request, pk):
+    account = get_object_or_404(AccountInfo, pk=pk)
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            amount = Decimal(str(data.get('amount', 0)))
+            transaction_type = data.get('transaction_type')
+            
+            if not amount:
+                return JsonResponse({'error': 'Amount is required'}, status=400)
+            
+            if transaction_type not in ['deposit', 'withdrawal']:
+                return JsonResponse({'error': 'Invalid transaction type'}, status=400)
+            
+            # Adjust amount based on transaction type
+            if transaction_type == 'withdrawal':
+                amount = -amount
+            
+            # Update balance and add transaction
+            account.account_balance += amount
+            
+            # Add to transaction history
+            if not account.last_transactions:
+                account.last_transactions = []
+            
+            transaction_detail = f"{transaction_type.capitalize()}: {abs(amount)}"
+            account.last_transactions.append(transaction_detail)
+            
+            # Keep only last 10 transactions
+            account.last_transactions = account.last_transactions[-10:]
+            
+            account.save()
+            
+            return JsonResponse({
+                'message': 'Transaction processed successfully',
+                'new_balance': str(account.account_balance),
+                'transaction': transaction_detail
+            })
+            
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+@csrf_exempt
+def delete_account_info(request, pk):
+    account = get_object_or_404(AccountInfo, pk=pk)
+    if request.method == 'DELETE':
+        account.delete()
+        return JsonResponse({'message': 'Account info deleted successfully'})
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
