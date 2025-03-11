@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, login as auth_login, logout as auth_logout
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.decorators import login_required
-from .models import Profile, Record
+from .models import Profile, Record, Techsupport, AccountInfo
 
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -50,6 +50,16 @@ def logout_view(request):
 def record_list(request):
     records = Record.objects.all()
     return render(request, 'records.html', {'records': records})
+
+@login_required
+def tech_support(request):
+    tech_support = Techsupport.objects.all()
+    return render(request, 'techsupport.html', {'tech_support': tech_support})
+
+@login_required
+def accounts(request):
+    accounts = AccountInfo.objects.all()
+    return render(request, 'techsupport.html', {'accounts': accounts})
 
 @login_required
 def create_record(request):
