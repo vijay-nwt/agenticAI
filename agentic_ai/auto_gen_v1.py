@@ -174,7 +174,7 @@ RoutingAgent = AssistantAgent(
      The available agents are:
         - TechSupportAgent: For troubleshooting internet, phone, cable, or software installation.
         - AccountsBillingAgent: For account balances,manage account details, Contact details, and transactions.
-        - ConversationalSearchAgent: For FAQs, product availability, and catalog filtering and weather information general inquiries, and can perform web searches to answer questions about current events or specific topics.
+        - ConversationalSearchAgent: For general queries ,weather information and can perform web searches to answer questions about current events or specific topics.
         - TravelConciergeAgent: For booking flights, hotels, and travel-related queries.
         - FrontDeskAgent: For handling appointments, service inquiries, call transfers, .
      You can engage with agnets multiple times
