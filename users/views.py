@@ -57,12 +57,12 @@ def tech_support(request):
     tech_support = Techsupport.objects.all()
     return render(request, 'techsupport.html', {'tech_support': tech_support})
 
-@login_required
+# @login_required
 def accounts(request):
     accounts = AccountInfo.objects.all()
-    return render(request, 'techsupport.html', {'accounts': accounts})
+    return render(request, 'account.html', {'accounts': accounts})
 
-@login_required
+# @login_required
 def create_record(request):
     if request.method == 'POST':
         # Create record from POST data
@@ -75,7 +75,7 @@ def create_record(request):
         return redirect('record_list')
     return render(request, 'record_form.html')
 
-@login_required
+# @login_required
 def update_record(request, pk):
     record = get_object_or_404(Record, pk=pk)
     if request.method == 'POST':
@@ -88,7 +88,7 @@ def update_record(request, pk):
         return redirect('record_list')
     return render(request, 'record_form.html', {'record': record})
 
-@login_required
+# @login_required
 def delete_record(request, pk):
     record = get_object_or_404(Record, pk=pk)
     if request.method == 'POST':

@@ -25,9 +25,9 @@
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'tech_support' %}">Tech Support</a>
                         </li>
-                        <li class="nav-item">
+                        <!-- <li class="nav-item">
                             <a class="nav-link" href="{% url 'accounts' %}">Account</a>
-                        </li>
+                        </li> -->
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'record_list' %}">Convo</a>
                         </li>
@@ -38,6 +38,9 @@
                             <a class="nav-link" href="{% url 'record_list' %}">Front desk</a>
                         </li>
                     {% endif %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'accounts' %}">Account</a>
+                        </li>
                 </ul>
                 <ul class="navbar-nav">
                     {% if user.is_authenticated %}

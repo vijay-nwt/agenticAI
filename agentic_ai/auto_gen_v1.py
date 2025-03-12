@@ -165,6 +165,7 @@ get_account_info_tool = FunctionTool(get_account_info, description="Get account 
 update_account_info_tool = FunctionTool(update_account_info, description="Update existing account information")
 delete_account_info_tool = FunctionTool(delete_account_info, description="Delete account information")
 weather_tool = FunctionTool(get_weather_info, description="Get current weather information for a given city")
+handle_transaction_tool = FunctionTool(handle_transaction, description="Handle deposit/withdrawal transaction and update balance")
 
 
 # Routing Agent - Determines the required module
@@ -207,12 +208,12 @@ AccountsBillingAgent = AssistantAgent(
     "AccountsBillingAgent",
     model_client=gpt_model_client,
     system_message="""
-    You manage account details, billing, plan upgrades, and payments.
+    You manage account details, balance, Contact details, and transactions.
     You can handle deposits and withdrawals which will automatically update both the balance and transaction history.
     Use the handle_transaction tool with transaction_type="deposit" for deposits and transaction_type="withdrawal" for withdrawals.
     """,
     tools=[create_account_info_tool, get_account_info_tool, update_account_info_tool, 
-           delete_account_info_tool, handle_transaction]
+           delete_account_info_tool, handle_transaction_tool]
 )
 
 ConversationalSearchAgent = AssistantAgent(
