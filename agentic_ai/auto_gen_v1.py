@@ -15,7 +15,6 @@ load_dotenv()
 
 API_KEY = os.getenv("OPENAI_API_KEY")
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
-RAPIDAPI_KEY = os.getenv("RAPIDAPI_KEY")
 
 # OpenAI Client
 gpt_model_client = OpenAIChatCompletionClient(
@@ -129,28 +128,7 @@ async def web_search(query: str) -> str:
     except Exception as e:
         return f"Error performing web search: {str(e)}"
 
-async def get_train_between_stations(from_station: str, to_station: str) -> str:
-    """Get train information between two stations using RapidAPI"""
-    
-    url = "https://irctc1.p.rapidapi.com/api/v3/trainBetweenStations"
-    headers = {
-        "x-rapidapi-key": RAPIDAPI_KEY,
-        "x-rapidapi-host": "irctc1.p.rapidapi.com"
-    }
-    params = {
-        "fromStationCode": from_station,
-        "toStationCode": to_station
-    }
-    
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=headers, params=params) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    return str(data)
-                return f"Error fetching train data: {await response.text()}"
-    except Exception as e:
-        return f"Error making API request: {str(e)}"
+
 
 # Create function tools
 create_account_info_tool = FunctionTool(create_account_info, description="Create new account information")
@@ -160,7 +138,6 @@ delete_account_info_tool = FunctionTool(delete_account_info, description="Delete
 weather_tool = FunctionTool(get_weather_info, description="Get current weather information for a given city")
 handle_transaction_tool = FunctionTool(handle_transaction, description="Handle deposit/withdrawal transaction and update balance")
 web_search_tool = FunctionTool(web_search, description="Perform a web search for latest or specific topic")
-train_search_tool = FunctionTool(get_train_between_stations, description="Get train information between two stations")
 
 
 # Routing Agent - Determines the required module
@@ -171,13 +148,14 @@ RoutingAgent = AssistantAgent(
     system_message="""
     You are a planing agent. Your job is to identify the intent of the user and delegate the request to the correct agent.
      You only plan and delegate tasks - you do not execute them yourself. 
+     make the planning carefully by understanding the user context, from certain outputs of agents, you can rethink your plan but if any big issue, terminate to user directly.
      The available agents are:
         - TechSupportAgent: For troubleshooting internet, phone, cable, or software installation.
-        - AccountsBillingAgent: For account balances,manage account details, Contact details, and transactions.
+        - AccountsBillingAgent: For account balances,manage account details, Contact details, and transactions and transfers from each other accounts.
         - ConversationalSearchAgent: For general queries ,weather information and can perform web searches to answer questions about current events or specific topics.
         - TravelConciergeAgent: For booking flights, hotels, and travel-related queries.
         - FrontDeskAgent: For handling appointments, service inquiries, call transfers, .
-     You can engage with agnets multiple times
+     You can engage with agents multiple times
 
     When assigning tasks, use this format:
     1. <agent> : <task>
@@ -203,6 +181,7 @@ AccountsBillingAgent = AssistantAgent(
     You manage account details, balance, Contact details, and transactions.
     You can handle deposits and withdrawals which will automatically update both the balance and transaction history.
     Use the handle_transaction tool with transaction_type="deposit" for deposits and transaction_type="withdrawal" for withdrawals.
+    but make sure if we are performing transfers from each other accounts, you need to validate the availability of balance in accounts.
     """,
     tools=[create_account_info_tool, get_account_info_tool, update_account_info_tool, 
            delete_account_info_tool, handle_transaction_tool]
@@ -226,10 +205,8 @@ TravelConciergeAgent = AssistantAgent(
     model_client=gpt_model_client,
     system_message="""
     You assist users with travel bookings, comparisons, and recommendations.
-    You can search for trains between stations using the train search tool.
-    When using the train search tool, always ask for both source and destination station codes.
     """,
-    tools=[train_search_tool]
+    tools=[web_search_tool]
 )
 
 # Front Desk Agent
@@ -242,7 +219,7 @@ FrontDeskAgent = AssistantAgent(
 
 # Termination Conditions
 text_mention_termination = TextMentionTermination("TERMINATE")
-max_messages_termination = MaxMessageTermination(max_messages=3)
+max_messages_termination = MaxMessageTermination(max_messages=5)
 termination = text_mention_termination | max_messages_termination
 
 # Multi-Agent Team
