@@ -15,6 +15,7 @@ load_dotenv()
 
 API_KEY = os.getenv("OPENAI_API_KEY")
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
+RAPIDAPI_KEY = os.getenv("RAPIDAPI_KEY")
 
 # OpenAI Client
 gpt_model_client = OpenAIChatCompletionClient(
@@ -128,6 +129,29 @@ async def web_search(query: str) -> str:
     except Exception as e:
         return f"Error performing web search: {str(e)}"
 
+async def get_train_between_stations(from_station: str, to_station: str) -> str:
+    """Get train information between two stations using RapidAPI"""
+    
+    url = "https://irctc1.p.rapidapi.com/api/v3/trainBetweenStations"
+    headers = {
+        "x-rapidapi-key": RAPIDAPI_KEY,
+        "x-rapidapi-host": "irctc1.p.rapidapi.com"
+    }
+    params = {
+        "fromStationCode": from_station,
+        "toStationCode": to_station
+    }
+    
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers, params=params) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    return str(data)
+                return f"Error fetching train data: {await response.text()}"
+    except Exception as e:
+        return f"Error making API request: {str(e)}"
+
 # Create function tools
 create_account_info_tool = FunctionTool(create_account_info, description="Create new account information")
 get_account_info_tool = FunctionTool(get_account_info, description="Get account information by ID")
@@ -136,6 +160,7 @@ delete_account_info_tool = FunctionTool(delete_account_info, description="Delete
 weather_tool = FunctionTool(get_weather_info, description="Get current weather information for a given city")
 handle_transaction_tool = FunctionTool(handle_transaction, description="Handle deposit/withdrawal transaction and update balance")
 web_search_tool = FunctionTool(web_search, description="Perform a web search for latest or specific topic")
+train_search_tool = FunctionTool(get_train_between_stations, description="Get train information between two stations")
 
 
 # Routing Agent - Determines the required module
@@ -201,7 +226,10 @@ TravelConciergeAgent = AssistantAgent(
     model_client=gpt_model_client,
     system_message="""
     You assist users with travel bookings, comparisons, and recommendations.
-    """
+    You can search for trains between stations using the train search tool.
+    When using the train search tool, always ask for both source and destination station codes.
+    """,
+    tools=[train_search_tool]
 )
 
 # Front Desk Agent

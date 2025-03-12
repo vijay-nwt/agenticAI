@@ -15,7 +15,7 @@
                     <th scope="col">Balance</th>
                     <th scope="col">Contact Details</th>
                     <th scope="col">Last Transactions</th>
-                    <th scope="col">Actions</th>
+                    <!-- <th scope="col">Actions</th> -->
                 </tr>
             </thead>
             <tbody>
@@ -32,14 +32,14 @@
                             {% endfor %}
                         </small>
                     </td>
-                    <td>
+                    <!-- <td>
                         <form action="{% url 'delete_account_info' account.id %}" method="post" class="d-inline">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-danger btn-sm">
                                 <i class="fas fa-trash"></i> Delete
                             </button>
                         </form>
-                    </td>
+                    </td> -->
                 </tr>
                 {% endfor %}
             </tbody>
